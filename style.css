@@ -1075,15 +1075,8 @@ input:checked + .slider:before {
 
 .details-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 2.5rem;
-}
-
-@media (max-width: 900px) {
-    .details-grid {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-    }
 }
 
 .info-card {

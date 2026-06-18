@@ -155,7 +155,7 @@ body::after {
     height: 100%;
     background: linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(168, 85, 247, 0.01), rgba(0, 240, 255, 0.01));
     background-size: 100% 4px, 6px 100%;
-    z-index: 999;
+    z-index: -1;
     pointer-events: none;
     opacity: 0.85;
 }

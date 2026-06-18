@@ -5,6 +5,7 @@ const noCameraPrompt = document.getElementById('no-camera-prompt');
 const startBtn = document.getElementById('start-btn');
 const stopBtn = document.getElementById('stop-btn');
 const snapshotBtn = document.getElementById('snapshot-btn');
+const flipBtn = document.getElementById('flip-btn');
 const themeSelector = document.getElementById('theme-selector');
 
 // Slider Settings
@@ -215,6 +216,7 @@ let fps = 30.0;
 let prevTime = 0;
 let animationFrameId = null;
 let wasWarningActive = false;
+let currentFacingMode = 'environment'; // 'environment' (back) or 'user' (front)
 
 // OpenCV WebAssembly Mats (Persistent)
 let cap = null;
@@ -439,7 +441,7 @@ startBtn.addEventListener('click', () => {
         video: {
             width: { ideal: 640 },
             height: { ideal: 480 },
-            facingMode: "environment" // Prefer rear camera on mobile devices
+            facingMode: currentFacingMode
         },
         audio: false
     };
@@ -487,6 +489,83 @@ startBtn.addEventListener('click', () => {
             logEvent(`Hardware authorization failed: ${err.message}`, "warning");
             alert("Unable to access webcam. Please verify camera permissions in your browser.");
         });
+});
+
+flipBtn.addEventListener('click', () => {
+    currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+    logEvent(`Preferred camera flipped: ${currentFacingMode === "user" ? "FRONT (Selfie)" : "REAR (Main)"}`, "system");
+
+    if (streaming) {
+        logEvent("Flipping camera stream source active...", "system");
+        
+        // Pause loop animation frame briefly
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+
+        // Stop current active tracks
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        const constraints = {
+            video: {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: currentFacingMode
+            },
+            audio: false
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function(mediaStream) {
+                logEvent("New camera stream source authorized.", "success");
+                stream = mediaStream;
+                video.srcObject = stream;
+                video.play()
+                    .then(() => {
+                        let loopStarted = false;
+                        const checkDimensionsAndResume = () => {
+                            if (loopStarted) return;
+                            if (video.videoWidth === 0 || video.videoHeight === 0) {
+                                setTimeout(checkDimensionsAndResume, 50);
+                                return;
+                            }
+                            loopStarted = true;
+                            
+                            video.width = video.videoWidth;
+                            video.height = video.videoHeight;
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            
+                            // Re-bind OpenCV capturing for new stream dimension mapping
+                            cap = new cv.VideoCapture('video-input');
+                            
+                            logEvent(`Camera stream switched successfully: ${video.videoWidth}x${video.videoHeight}`, "success");
+                            
+                            // Resume processing loop
+                            animationFrameId = requestAnimationFrame(processingLoop);
+                        };
+
+                        video.onloadedmetadata = checkDimensionsAndResume;
+                        if (video.readyState >= 2) {
+                            checkDimensionsAndResume();
+                        }
+                    })
+                    .catch(err => {
+                        console.error("video.play() failed on flip: ", err);
+                        logEvent(`Playback failed: ${err.message}`, "warning");
+                    });
+            })
+            .catch(function(err) {
+                console.error("Camera switch failed: ", err);
+                logEvent(`Camera swap failed: ${err.message}`, "warning");
+                alert("Could not switch camera source in this orientation.");
+                // Revert state variables
+                currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+            });
+    }
 });
 
 stopBtn.addEventListener('click', stopScanner);

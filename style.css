@@ -1267,3 +1267,114 @@ body.theme-frost .orb-2 {
 body.theme-frost .orb-3 {
     background: radial-gradient(circle, #fbcfe8 0%, rgba(251, 207, 232, 0) 70%);
 }
+
+/* Team & Co-Founders Section */
+.team-section {
+    margin-top: 4rem;
+    padding: 3rem 2rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.team-section h2 {
+    font-family: var(--header-font);
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: var(--color-cyan);
+    margin-bottom: 2.5rem;
+    text-transform: uppercase;
+    text-shadow: 0 0 5px var(--color-cyan-glow);
+    text-align: center;
+}
+
+.team-grid {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    flex-wrap: wrap;
+}
+
+.team-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 280px;
+    background: rgba(3, 6, 12, 0.45);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 2rem 1.5rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.team-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-orchid), var(--color-cyan));
+    opacity: 0.8;
+}
+
+.team-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--border-hover);
+    box-shadow: 0 15px 35px rgba(0, 240, 255, 0.1);
+    background: rgba(3, 6, 12, 0.65);
+}
+
+.team-avatar-wrapper {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--color-orchid);
+    box-shadow: 0 0 15px var(--color-orchid-glow);
+    margin-bottom: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.team-card:hover .team-avatar-wrapper {
+    border-color: var(--color-cyan);
+    box-shadow: 0 0 20px var(--color-cyan-glow);
+    transform: scale(1.03);
+}
+
+.team-avatar-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.team-card h3 {
+    font-family: var(--header-font);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.35rem;
+    letter-spacing: 1px;
+}
+
+.team-card .role {
+    font-family: var(--mono-font);
+    font-size: 0.75rem;
+    color: var(--color-cyan);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 500;
+}
+
+.team-card .bio {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}

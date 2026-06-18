@@ -1,4 +1,4 @@
-const CACHE_NAME = "hidden-eye-cache-v1";
+const CACHE_NAME = "hidden-eye-cache-v2";
 const ASSETS = [
     "./",
     "./index.html",
@@ -16,7 +16,6 @@ self.addEventListener("install", event => {
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
             console.log("[Service Worker] Pre-caching offline dependencies...");
-            // Map assets and catch individual failures to prevent cache install rejection
             return Promise.all(
                 ASSETS.map(asset => {
                     return cache.add(asset).catch(err => {
@@ -44,32 +43,58 @@ self.addEventListener("activate", event => {
     );
 });
 
-// Fetch Event - Cache-First strategy with ignoreSearch to handle version query strings (?v=...)
+// Fetch Event - Network-First for HTML/CSS/JS, Cache-First for static libraries/images
 self.addEventListener("fetch", event => {
-    // Only intercept http/https requests (ignore chrome-extension URLs)
     if (!event.request.url.startsWith("http")) return;
 
-    event.respondWith(
-        caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
-            if (cachedResponse) {
-                return cachedResponse;
-            }
+    const url = new URL(event.request.url);
+    
+    // Check if it's a static/large asset that changes rarely (OpenCV, images, icons, manifest)
+    const isStaticAsset = url.pathname.endsWith("opencv.js") || 
+                          url.pathname.endsWith(".png") || 
+                          url.pathname.endsWith(".jpg") || 
+                          url.pathname.endsWith(".jpeg") ||
+                          url.pathname.endsWith(".svg") ||
+                          url.pathname.endsWith("manifest.json");
 
-            return fetch(event.request).then(networkResponse => {
-                // Only cache successful requests
-                if (!networkResponse || networkResponse.status !== 200) {
+    if (isStaticAsset) {
+        // Cache-First strategy
+        event.respondWith(
+            caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
+                if (cachedResponse) {
+                    return cachedResponse;
+                }
+                return fetch(event.request).then(networkResponse => {
+                    if (!networkResponse || networkResponse.status !== 200) {
+                        return networkResponse;
+                    }
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, responseToCache);
+                    });
+                    return networkResponse;
+                }).catch(() => {
+                    // Fallback to any match in case network fails
+                    return caches.match(event.request);
+                });
+            })
+        );
+    } else {
+        // Network-First strategy for HTML, CSS, JS (dynamic application files)
+        event.respondWith(
+            fetch(event.request).then(networkResponse => {
+                if (networkResponse && networkResponse.status === 200) {
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, responseToCache);
+                    });
                     return networkResponse;
                 }
-
-                const responseToCache = networkResponse.clone();
-                caches.open(CACHE_NAME).then(cache => {
-                    cache.put(event.request, responseToCache);
-                });
-
                 return networkResponse;
-            }).catch(err => {
-                console.log("[Service Worker] Offline fetch failed:", err);
-            });
-        })
-    );
+            }).catch(() => {
+                // Network failed (offline), fallback to cache
+                return caches.match(event.request, { ignoreSearch: true });
+            })
+        );
+    }
 });

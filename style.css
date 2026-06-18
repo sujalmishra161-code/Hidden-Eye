@@ -130,7 +130,7 @@ body {
     background-color: var(--bg-dark);
     background-image: 
         linear-gradient(var(--bg-dark-overlay), var(--bg-dark-overlay)),
-        url('hud_background.png'),
+        url('hud_background.png?v=1.0.1'),
         linear-gradient(rgba(168, 85, 247, 0.025) 1px, transparent 1px),
         linear-gradient(90deg, rgba(168, 85, 247, 0.025) 1px, transparent 1px);
     background-size: cover, cover, 40px 40px, 40px 40px;

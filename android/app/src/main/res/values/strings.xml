@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Hidden Eye</string>
+    <string name="title_activity_main">Hidden Eye</string>
+    <string name="package_name">com.hiddeneye.app</string>
+    <string name="custom_url_scheme">com.hiddeneye.app</string>
+</resources>

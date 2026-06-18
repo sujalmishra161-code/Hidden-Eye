@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hidden Eye - Anti-Spy Camera Detector</title>
     <link rel="stylesheet" href="style.css?v=1.0.4">
+    <link rel="manifest" href="manifest.json">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -138,6 +139,18 @@
             <div class="controls-card hud-panel">
                 <h2>SCANNER SETTINGS</h2>
                 <div class="controls-group">
+                    <!-- Calibration Presets -->
+                    <div class="control-item">
+                        <div class="control-label">
+                            <span>Calibration Presets</span>
+                        </div>
+                        <div class="preset-row">
+                            <button id="preset-dark" class="btn-preset active">Dark Room</button>
+                            <button id="preset-day" class="btn-preset">Daylight</button>
+                            <button id="preset-range" class="btn-preset">Long Range</button>
+                        </div>
+                        <span class="control-desc" style="margin-top: 6px;">Instantly configure all settings for specific scanning conditions.</span>
+                    </div>
                     <!-- Brightness slider -->
                     <div class="control-item">
                         <div class="control-label">
@@ -220,6 +233,17 @@
             <div class="telemetry-card">
                 <div class="telemetry-label">OpenCV Engine</div>
                 <div class="telemetry-value" id="stat-engine">STANDBY</div>
+            </div>
+        </div>
+
+        <!-- Telemetry Signal Strength Graph -->
+        <div class="graph-panel hud-panel">
+            <div class="graph-header">
+                <span>Threat Signature Telemetry Monitor</span>
+                <span id="signal-strength" class="strength-indicator">0% STRENGTH</span>
+            </div>
+            <div class="graph-body">
+                <canvas id="graph-canvas" height="80"></canvas>
             </div>
         </div>
 
@@ -327,5 +351,15 @@
     </script>
     <script async src="https://docs.opencv.org/4.5.4/opencv.js" type="text/javascript"></script>
     <script src="app.js?v=1.0.7"></script>
+    <!-- PWA Offline Service Worker registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('[Service Worker] PWA registered successfully:', reg.scope))
+                    .catch(err => console.error('[Service Worker] Registration failed:', err));
+            });
+        }
+    </script>
 </body>
 </html>

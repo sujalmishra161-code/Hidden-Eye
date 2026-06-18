@@ -37,6 +37,8 @@ const statTargets = document.getElementById('stat-targets');
 const statLatency = document.getElementById('stat-latency');
 const statBrightness = document.getElementById('stat-brightness');
 const statEngine = document.getElementById('stat-engine');
+const graphCanvas = document.getElementById('graph-canvas');
+const signalStrengthText = document.getElementById('signal-strength');
 
 // Logging utility helper
 function logEvent(message, type = 'system') {
@@ -194,6 +196,54 @@ paramDebug.addEventListener('change', () => {
     logEvent(`Binary Mask Debug Mode toggled: ${isChecked ? 'ON' : 'OFF'}`, isChecked ? "warning" : "system");
 });
 
+// Calibration Presets Event Listeners
+const presetDark = document.getElementById('preset-dark');
+const presetDay = document.getElementById('preset-day');
+const presetRange = document.getElementById('preset-range');
+
+function applyPreset(presetName, settings) {
+    paramBrightness.value = settings.brightness;
+    paramMinArea.value = settings.minArea;
+    paramMaxArea.value = settings.maxArea;
+    paramCircularity.value = settings.circularity;
+    paramStability.value = settings.stability;
+
+    brightVal.textContent = settings.brightness;
+    minAreaVal.textContent = settings.minArea;
+    maxAreaVal.textContent = settings.maxArea;
+    circVal.textContent = settings.circularity + '%';
+    stabVal.textContent = settings.stability;
+    
+    if (statBrightness) statBrightness.textContent = settings.brightness;
+
+    // Trigger input events to update sliders programmatically
+    paramBrightness.dispatchEvent(new Event('input'));
+    paramMinArea.dispatchEvent(new Event('input'));
+    paramMaxArea.dispatchEvent(new Event('input'));
+    paramCircularity.dispatchEvent(new Event('input'));
+    paramStability.dispatchEvent(new Event('input'));
+
+    [presetDark, presetDay, presetRange].forEach(btn => btn.classList.remove('active'));
+
+    logEvent(`Preset [${presetName.toUpperCase()}] applied successfully.`, "success");
+    logEvent(`Calibrated settings: brightness floor=${settings.brightness}, minArea=${settings.minArea}px, circularity=${settings.circularity}%, stability=${settings.stability}f`, "system");
+}
+
+presetDark.addEventListener('click', () => {
+    applyPreset('Dark Room', { brightness: 200, minArea: 15, maxArea: 400, circularity: 60, stability: 5 });
+    presetDark.classList.add('active');
+});
+
+presetDay.addEventListener('click', () => {
+    applyPreset('Daylight', { brightness: 235, minArea: 12, maxArea: 300, circularity: 75, stability: 7 });
+    presetDay.classList.add('active');
+});
+
+presetRange.addEventListener('click', () => {
+    applyPreset('Long Range', { brightness: 185, minArea: 6, maxArea: 150, circularity: 45, stability: 4 });
+    presetRange.classList.add('active');
+});
+
 // Theme Switcher Listener
 themeSelector.addEventListener('change', () => {
     const theme = themeSelector.value;
@@ -217,6 +267,7 @@ let prevTime = 0;
 let animationFrameId = null;
 let wasWarningActive = false;
 let currentFacingMode = 'environment'; // 'environment' (back) or 'user' (front)
+let signalHistory = new Array(120).fill(0); // Holds rolling history of target threat scores
 
 // OpenCV WebAssembly Mats (Persistent)
 let cap = null;
@@ -856,6 +907,42 @@ function processingLoop() {
         if (statTargets) statTargets.textContent = trackedPoints.length;
         if (statLatency) statLatency.textContent = `${frameTime.toFixed(1)}ms`;
 
+        // Calculate Threat Signal Strength
+        let signalStrength = 0;
+        if (trackedPoints.length > 0) {
+            let maxStability = 0;
+            for (let tp of trackedPoints) {
+                if (tp.framesActive > maxStability) {
+                    maxStability = tp.framesActive;
+                }
+            }
+            let stabilityRatio = Math.min(1.0, maxStability / stabilityThresh);
+            let countBonus = Math.min(0.2, (trackedPoints.length - 1) * 0.1);
+            
+            if (warningTriggered) {
+                signalStrength = 100;
+            } else {
+                signalStrength = Math.min(99, Math.round((stabilityRatio * 75) + (countBonus * 100)));
+            }
+        }
+        
+        // Push current strength to history
+        signalHistory.push(signalStrength);
+        signalHistory.shift();
+
+        // Update Signal Strength indicator UI
+        if (signalStrengthText) {
+            signalStrengthText.textContent = `${signalStrength}% STRENGTH`;
+            if (warningTriggered) {
+                signalStrengthText.classList.add('alert-pulse');
+            } else {
+                signalStrengthText.classList.remove('alert-pulse');
+            }
+        }
+
+        // Render Telemetry Line Graph on canvas
+        drawTelemetryGraph(warningTriggered);
+
         // Loop next frame
         animationFrameId = requestAnimationFrame(processingLoop);
 
@@ -865,4 +952,94 @@ function processingLoop() {
         alert("Scanner processing error occurred: " + err + "\nStopping scanner.");
         stopScanner();
     }
+}
+
+// Telemetry Graph rendering function using HTML5 canvas
+function drawTelemetryGraph(isWarning) {
+    if (!graphCanvas) return;
+    const ctx = graphCanvas.getContext('2d');
+    const width = graphCanvas.clientWidth;
+    const height = graphCanvas.clientHeight;
+    
+    // Sync canvas buffer width with CSS layouts
+    if (graphCanvas.width !== width || graphCanvas.height !== height) {
+        graphCanvas.width = width;
+        graphCanvas.height = height;
+    }
+
+    ctx.clearRect(0, 0, width, height);
+
+    // Fetch theme-specific CSS color tokens dynamically
+    const primaryColor = getComputedStyle(document.body).getPropertyValue('--color-cyan').trim() || '#00f0ff';
+    const glowColor = getComputedStyle(document.body).getPropertyValue('--color-cyan-glow').trim() || 'rgba(0, 240, 255, 0.3)';
+    const warningColor = getComputedStyle(document.body).getPropertyValue('--color-red').trim() || '#ff3366';
+
+    // 1. Draw Grid Lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
+    ctx.lineWidth = 1;
+    
+    // Horizontal lines
+    for (let y = 18; y < height; y += 18) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+    
+    // Vertical lines scrolling grid animation
+    let scrollOffset = (prevTime / 40) % 30;
+    for (let x = -scrollOffset; x < width; x += 30) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+
+    // 2. Draw Signal Wave path
+    ctx.beginPath();
+    let sliceWidth = width / (signalHistory.length - 1);
+    
+    for (let i = 0; i < signalHistory.length; i++) {
+        let x = i * sliceWidth;
+        let val = signalHistory[i];
+        let y = height - (val / 100) * (height - 10) - 5;
+        
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+
+    ctx.strokeStyle = isWarning ? warningColor : primaryColor;
+    ctx.lineWidth = 2.5;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = isWarning ? 'rgba(255, 51, 102, 0.45)' : glowColor;
+    ctx.stroke();
+    
+    // Reset shadow for translucent gradient fill
+    ctx.shadowBlur = 0;
+
+    // 3. Draw Gradient Fill Area
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+    for (let i = 0; i < signalHistory.length; i++) {
+        let x = i * sliceWidth;
+        let val = signalHistory[i];
+        let y = height - (val / 100) * (height - 10) - 5;
+        ctx.lineTo(x, y);
+    }
+    ctx.lineTo(width, height);
+    ctx.closePath();
+
+    let gradient = ctx.createLinearGradient(0, 0, 0, height);
+    if (isWarning) {
+        gradient.addColorStop(0, 'rgba(255, 51, 102, 0.15)');
+        gradient.addColorStop(1, 'rgba(255, 51, 102, 0.0)');
+    } else {
+        gradient.addColorStop(0, glowColor);
+        gradient.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
+    }
+    ctx.fillStyle = gradient;
+    ctx.fill();
 }

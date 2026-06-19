@@ -66,6 +66,13 @@
                     </svg>
                     Download APK
                 </a>
+                <button id="auth-btn" class="btn btn-tertiary" style="height: 38px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.72rem; padding: 0.5rem 0.9rem; border-radius: 4px; line-height: 1; text-transform: uppercase; font-family: var(--mono-font); font-weight: 700; letter-spacing: 0.5px;">
+                    <svg style="width: 14px; height: 14px; margin-right: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span id="auth-btn-text">Log In</span>
+                </button>
             </div>
         </header>
 
@@ -81,7 +88,7 @@
 
         <div class="workspace-grid">
             <!-- Left Panel: Viewport -->
-            <div class="viewport-card hud-panel">
+            <div class="viewport-card hud-panel tab-content tab-scan active">
                 <div class="card-header">
                     <div class="status-indicator">
                         <span id="status-dot" class="dot idle"></span>
@@ -146,7 +153,7 @@
             </div>
 
             <!-- Right Panel: Controls -->
-            <div class="controls-card hud-panel">
+            <div class="controls-card hud-panel tab-content tab-calibrate">
                 <h2>SCANNER SETTINGS</h2>
                 <div class="controls-group">
                     <!-- Calibration Presets -->
@@ -222,12 +229,23 @@
                             <span class="slider round"></span>
                         </label>
                     </div>
+                    <!-- Dev Premium Bypass Checkbox -->
+                    <div class="control-toggle dev-bypass-wrapper" style="border-top: 1px dashed var(--border-color); padding-top: 12px; margin-top: 12px;">
+                        <div class="toggle-text">
+                            <span style="color: #ff9900; font-weight: bold;">[DEV] Simulate Premium</span>
+                            <span class="toggle-desc">Instantly unlock all subscription gates for local APK testing.</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="param-dev-premium">
+                            <span class="slider round" style="background-color: rgba(255,153,0,0.2);"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Telemetry Stats Grid -->
-        <div class="telemetry-grid">
+        <div class="telemetry-grid tab-content tab-scan active">
             <div class="telemetry-card">
                 <div class="telemetry-label">Active Targets</div>
                 <div class="telemetry-value" id="stat-targets">0</div>
@@ -247,7 +265,7 @@
         </div>
 
         <!-- Telemetry Signal Strength Graph -->
-        <div class="graph-panel hud-panel">
+        <div class="graph-panel hud-panel tab-content tab-logs">
             <div class="graph-header">
                 <span>Threat Signature Telemetry Monitor</span>
                 <span id="signal-strength" class="strength-indicator">0% STRENGTH</span>
@@ -258,7 +276,7 @@
         </div>
 
         <!-- Terminal Console Log -->
-        <div class="console-panel">
+        <div class="console-panel tab-content tab-logs">
             <div class="console-header">
                 <span>Scanner Event Console Terminal</span>
                 <span id="console-status">ONLINE</span>
@@ -269,7 +287,7 @@
         </div>
 
         <!-- Captured Threat Snapshots Gallery -->
-        <div class="gallery-panel hud-panel">
+        <div class="gallery-panel hud-panel tab-content tab-gallery">
             <h2>Captured Threat Gallery</h2>
             <div class="gallery-grid" id="gallery-grid">
                 <div class="gallery-empty" id="gallery-empty">
@@ -279,7 +297,7 @@
         </div>
 
         <!-- Explanatory Details -->
-        <section class="details-section">
+        <section class="details-section tab-content tab-gallery">
             <div class="details-grid">
                 <div class="info-card">
                     <h3>HOW IT WORKS</h3>
@@ -313,7 +331,7 @@
         </section>
 
         <!-- Team Section -->
-        <section class="team-section">
+        <section class="team-section tab-content tab-gallery">
             <h2>Co-Founders & Creators</h2>
             <div class="team-grid">
                 <div class="team-card">
@@ -339,6 +357,147 @@
             <p>&copy; 2026 Hidden Eye. Powered by WebAssembly OpenCV.js.</p>
         </footer>
     </div>
+
+    <!-- Bottom Navigation Bar (Hidden on Desktop) -->
+    <nav class="mobile-nav">
+        <button class="nav-item active" data-tab="scan">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            <span>Scan</span>
+        </button>
+        <button class="nav-item" data-tab="calibrate">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>Calibrate</span>
+        </button>
+        <button class="nav-item" data-tab="logs">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <span>Logs</span>
+        </button>
+        <button class="nav-item" data-tab="gallery">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span>Gallery</span>
+        </button>
+    </nav>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">ACCESS PORTAL</span>
+                <button class="modal-close" id="close-auth-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="auth-tabs">
+                    <button class="auth-tab-btn active" id="tab-login-btn">LOGIN</button>
+                    <button class="auth-tab-btn" id="tab-signup-btn">REGISTER</button>
+                </div>
+                
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="login-email">SECURE EMAIL</label>
+                        <input type="email" id="login-email" required placeholder="name@domain.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">SECURE KEY (PASSWORD)</label>
+                        <input type="password" id="login-password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-primary form-submit">AUTHORIZE ACCESS</button>
+                </form>
+
+                <!-- Signup Form -->
+                <form id="signup-form" class="auth-form hidden">
+                    <div class="form-group">
+                        <label for="signup-name">CREATOR NAME</label>
+                        <input type="text" id="signup-name" required placeholder="Your Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-email">SECURE EMAIL</label>
+                        <input type="email" id="signup-email" required placeholder="name@domain.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">SECURE KEY (PASSWORD)</label>
+                        <input type="password" id="signup-password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-primary form-submit">CREATE SECURITY ACCOUNT</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="modal-overlay hidden">
+        <div class="modal-card paywall-card">
+            <div class="modal-header">
+                <span class="modal-title" style="color: var(--color-red); text-shadow: 0 0 8px var(--color-red-glow);">🔒 PREMIUM ACCESS REQUIRED</span>
+                <button class="modal-close" id="close-paywall-btn">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <div class="paywall-badge">PRO LEVEL DETECTOR</div>
+                <h2>Unlock Unlimited Scanning</h2>
+                <p class="paywall-desc">Get professional anti-spy scanning capability and remove all session limits.</p>
+                
+                <div class="features-list">
+                    <div class="feature-item">
+                        <span class="feature-icon">✨</span>
+                        <div class="feature-text">
+                            <strong>Unlimited Scan Duration</strong>
+                            <span>Remove the 45-second scan timeout limit completely.</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🔒</span>
+                        <div class="feature-text">
+                            <strong>Advanced Presets Unlocked</strong>
+                            <span>Daylight & Long Range filters for specific scanning environments.</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📸</span>
+                        <div class="feature-text">
+                            <strong>Threat Snapshot Captures</strong>
+                            <span>Take HD snapshots, coordinates, and build your threat gallery.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pricing-tiers">
+                    <div class="price-card">
+                        <span class="tier-name">Monthly Pass</span>
+                        <span class="tier-price">$1.99<span>/mo</span></span>
+                        <button class="btn btn-tertiary select-tier-btn" data-tier="monthly">Subscribe</button>
+                    </div>
+                    <div class="price-card popular">
+                        <div class="popular-badge">BEST VALUE</div>
+                        <span class="tier-name">Annual Pass</span>
+                        <span class="tier-price">$9.99<span>/yr</span></span>
+                        <button class="btn btn-primary select-tier-btn" data-tier="annual">Subscribe</button>
+                    </div>
+                    <div class="price-card">
+                        <span class="tier-name">Lifetime Key</span>
+                        <span class="tier-price">$14.99</span>
+                        <button class="btn btn-tertiary select-tier-btn" data-tier="lifetime">Buy Once</button>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1.5rem; font-size: 0.65rem; color: var(--text-secondary);">
+                    Secured via App Store & Google Play billing. Cancel anytime.
+                </div>
+            </div>
+        </div>
 
     <!-- OpenCV.js Setup & Trigger Script -->
     <script>

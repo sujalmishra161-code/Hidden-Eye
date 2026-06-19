@@ -235,11 +235,19 @@ presetDark.addEventListener('click', () => {
 });
 
 presetDay.addEventListener('click', () => {
+    if (!isPremium) {
+        showPaywall();
+        return;
+    }
     applyPreset('Daylight', { brightness: 235, minArea: 12, maxArea: 300, circularity: 75, stability: 7 });
     presetDay.classList.add('active');
 });
 
 presetRange.addEventListener('click', () => {
+    if (!isPremium) {
+        showPaywall();
+        return;
+    }
     applyPreset('Long Range', { brightness: 185, minArea: 6, maxArea: 150, circularity: 45, stability: 4 });
     presetRange.classList.add('active');
 });
@@ -476,12 +484,19 @@ function captureSnapshot() {
     }
 }
 
-snapshotBtn.addEventListener('click', captureSnapshot);
+snapshotBtn.addEventListener('click', () => {
+    if (!isPremium) {
+        showPaywall();
+        return;
+    }
+    captureSnapshot();
+});
 
 // Camera control routines
 startBtn.addEventListener('click', () => {
     // Initialize Web Audio Engine
     audioEngine.init();
+    scanStartTime = Date.now();
     
     logEvent("Initializing hardware capture modules...", "system");
     
@@ -713,6 +728,17 @@ function initOpenCvMatsAndLoop() {
 
 function processingLoop() {
     if (!streaming) return;
+
+    // Premium session scanning limit check (45 seconds)
+    if (!isPremium && scanStartTime > 0) {
+        const elapsed = Date.now() - scanStartTime;
+        if (elapsed >= 45000) {
+            logEvent("🔒 Scan session limit reached (45s limit). Please upgrade to Premium.", "warning");
+            stopScanner();
+            showPaywall();
+            return;
+        }
+    }
 
     try {
         let t0 = performance.now();
@@ -1043,3 +1069,247 @@ function drawTelemetryGraph(isWarning) {
     ctx.fillStyle = gradient;
     ctx.fill();
 }
+
+// ==========================================
+// Phase 2: Mobile Navigation, Auth & Paywall
+// ==========================================
+
+// Global state trackers
+let isPremium = false;
+let currentUser = null;
+let scanStartTime = 0;
+
+// Tab Switching Listener (collapses UI on mobile viewport layout)
+document.querySelectorAll('.nav-item').forEach(button => {
+    button.addEventListener('click', () => {
+        const tabName = button.getAttribute('data-tab');
+        
+        // Toggle tab button states
+        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Toggle tab card visibility
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+            if (content.classList.contains('tab-' + tabName)) {
+                content.classList.add('active');
+            }
+        });
+        
+        logEvent(`Navigated to workspace: [${tabName.toUpperCase()}]`, "system");
+    });
+});
+
+// Modal selectors
+const authModal = document.getElementById('auth-modal');
+const paywallModal = document.getElementById('paywall-modal');
+const authBtn = document.getElementById('auth-btn');
+const authBtnText = document.getElementById('auth-btn-text');
+const closeAuthBtn = document.getElementById('close-auth-btn');
+const closePaywallBtn = document.getElementById('close-paywall-btn');
+
+// Login modal trigger actions
+if (authBtn) {
+    authBtn.addEventListener('click', () => {
+        if (currentUser) {
+            logOutUser();
+        } else {
+            authModal.classList.remove('hidden');
+        }
+    });
+}
+
+if (closeAuthBtn) {
+    closeAuthBtn.addEventListener('click', () => {
+        authModal.classList.add('hidden');
+    });
+}
+
+if (closePaywallBtn) {
+    closePaywallBtn.addEventListener('click', () => {
+        paywallModal.classList.add('hidden');
+    });
+}
+
+// Close overlays if backing out
+window.addEventListener('click', (e) => {
+    if (e.target === authModal) {
+        authModal.classList.add('hidden');
+    }
+    if (e.target === paywallModal) {
+        paywallModal.classList.add('hidden');
+    }
+});
+
+// Auth Modal Login/Register tabs switching logic
+const tabLoginBtn = document.getElementById('tab-login-btn');
+const tabSignupBtn = document.getElementById('tab-signup-btn');
+const loginForm = document.getElementById('login-form');
+const signupForm = document.getElementById('signup-form');
+
+if (tabLoginBtn && tabSignupBtn) {
+    tabLoginBtn.addEventListener('click', () => {
+        tabLoginBtn.classList.add('active');
+        tabSignupBtn.classList.remove('active');
+        loginForm.classList.remove('hidden');
+        signupForm.classList.add('hidden');
+    });
+    
+    tabSignupBtn.addEventListener('click', () => {
+        tabSignupBtn.classList.add('active');
+        tabLoginBtn.classList.remove('active');
+        signupForm.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+    });
+}
+
+// User credentials secure forms handlers
+const loginFormElement = document.getElementById('login-form');
+const signupFormElement = document.getElementById('signup-form');
+
+if (loginFormElement) {
+    loginFormElement.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        
+        currentUser = {
+            email: email,
+            name: email.split('@')[0],
+            premium: localStorage.getItem('hidden_eye_premium') === 'true'
+        };
+        
+        localStorage.setItem('hidden_eye_user', JSON.stringify(currentUser));
+        isPremium = currentUser.premium;
+        
+        logEvent(`Secure session loaded. Access granted to: ${currentUser.name}`, "success");
+        updateAuthUI();
+        authModal.classList.add('hidden');
+    });
+}
+
+if (signupFormElement) {
+    signupFormElement.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('signup-email').value;
+        const name = document.getElementById('signup-name').value;
+        
+        currentUser = {
+            email: email,
+            name: name,
+            premium: false
+        };
+        
+        localStorage.setItem('hidden_eye_user', JSON.stringify(currentUser));
+        isPremium = false;
+        localStorage.setItem('hidden_eye_premium', 'false');
+        
+        logEvent(`SECURE ACCOUNT REGISTERED. Welcome, ${name}!`, "success");
+        updateAuthUI();
+        authModal.classList.add('hidden');
+    });
+}
+
+function logOutUser() {
+    logEvent(`User session terminated for security profile: ${currentUser.name}`, "system");
+    currentUser = null;
+    isPremium = false;
+    localStorage.removeItem('hidden_eye_user');
+    localStorage.setItem('hidden_eye_premium', 'false');
+    updateAuthUI();
+}
+
+function updateAuthUI() {
+    if (currentUser) {
+        authBtnText.textContent = currentUser.name.toUpperCase();
+        authBtn.classList.add('btn-primary');
+        authBtn.classList.remove('btn-tertiary');
+    } else {
+        authBtnText.textContent = "Log In";
+        authBtn.classList.remove('btn-primary');
+        authBtn.classList.add('btn-tertiary');
+    }
+    updatePremiumState();
+}
+
+function showPaywall() {
+    paywallModal.classList.remove('hidden');
+    logEvent("🔒 Upgrade Required. Premium alert triggered.", "warning");
+}
+
+// Secure billing checkout simulators
+document.querySelectorAll('.select-tier-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tier = btn.getAttribute('data-tier');
+        logEvent(`Redirecting to secure merchant checkout for: ${tier.toUpperCase()}`, "system");
+        
+        btn.textContent = "CONNECTING...";
+        btn.disabled = true;
+        
+        setTimeout(() => {
+            isPremium = true;
+            localStorage.setItem('hidden_eye_premium', 'true');
+            
+            if (currentUser) {
+                currentUser.premium = true;
+                localStorage.setItem('hidden_eye_user', JSON.stringify(currentUser));
+            }
+            
+            logEvent("🎉 Billing authorized! Premium member status activated.", "success");
+            updatePremiumState();
+            
+            btn.textContent = "SUBSCRIBE";
+            btn.disabled = false;
+            paywallModal.classList.add('hidden');
+            alert("Upgrade completed successfully! Thank you for purchasing Hidden Eye Premium.");
+        }, 1200);
+    });
+});
+
+// Developer bypass switch listener
+const devPremiumBypass = document.getElementById('param-dev-premium');
+if (devPremiumBypass) {
+    devPremiumBypass.addEventListener('change', function() {
+        isPremium = this.checked;
+        localStorage.setItem('hidden_eye_premium', isPremium ? 'true' : 'false');
+        if (currentUser) {
+            currentUser.premium = isPremium;
+            localStorage.setItem('hidden_eye_user', JSON.stringify(currentUser));
+        }
+        logEvent(`[DEV BYPASS] Simulated premium authorization: ${isPremium ? 'ACTIVE' : 'DEACTIVATED'}`, isPremium ? "success" : "warning");
+        updatePremiumState();
+    });
+}
+
+function updatePremiumState() {
+    const presetDay = document.getElementById('preset-day');
+    const presetRange = document.getElementById('preset-range');
+    if (devPremiumBypass) {
+        devPremiumBypass.checked = isPremium;
+    }
+    
+    if (isPremium) {
+        if (presetDay) presetDay.classList.remove('premium-locked');
+        if (presetRange) presetRange.classList.remove('premium-locked');
+    } else {
+        if (presetDay) presetDay.classList.add('premium-locked');
+        if (presetRange) presetRange.classList.add('premium-locked');
+    }
+}
+
+// Initial session load parameters
+const savedPremium = localStorage.getItem('hidden_eye_premium');
+if (savedPremium === 'true') {
+    isPremium = true;
+}
+const savedUser = localStorage.getItem('hidden_eye_user');
+if (savedUser) {
+    currentUser = JSON.parse(savedUser);
+    if (currentUser.premium) {
+        isPremium = true;
+    }
+}
+
+// Auto-run status update
+setTimeout(() => {
+    updateAuthUI();
+}, 200);

@@ -45,5 +45,7 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Hidden Eye requires access to the camera to scan for camera lens reflections in real-time.</string>
 </dict>
 </plist>

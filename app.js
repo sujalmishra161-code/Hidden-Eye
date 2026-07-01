@@ -1079,6 +1079,18 @@ let isPremium = false;
 let currentUser = null;
 let scanStartTime = 0;
 
+// Local Storage registered users database initializer
+let registeredUsersList = JSON.parse(localStorage.getItem('hidden_eye_registered_users') || '[]');
+if (!registeredUsersList.some(u => u.email === 'test@hiddeneye.com')) {
+    registeredUsersList.push({
+        email: 'test@hiddeneye.com',
+        name: 'test',
+        password: 'testpass',
+        premium: true
+    });
+    localStorage.setItem('hidden_eye_registered_users', JSON.stringify(registeredUsersList));
+}
+
 // Tab Switching Listener (collapses UI on mobile viewport layout)
 document.querySelectorAll('.nav-item').forEach(button => {
     button.addEventListener('click', () => {
@@ -1108,12 +1120,29 @@ const authBtnText = document.getElementById('auth-btn-text');
 const closeAuthBtn = document.getElementById('close-auth-btn');
 const closePaywallBtn = document.getElementById('close-paywall-btn');
 
+const authErrorMsg = document.getElementById('auth-error-msg');
+
+function displayAuthError(message) {
+    if (authErrorMsg) {
+        authErrorMsg.textContent = message;
+        authErrorMsg.style.display = 'block';
+    }
+}
+
+function clearAuthError() {
+    if (authErrorMsg) {
+        authErrorMsg.style.display = 'none';
+        authErrorMsg.textContent = '';
+    }
+}
+
 // Login modal trigger actions
 if (authBtn) {
     authBtn.addEventListener('click', () => {
         if (currentUser) {
             logOutUser();
         } else {
+            clearAuthError();
             authModal.classList.remove('hidden');
         }
     });
@@ -1121,6 +1150,7 @@ if (authBtn) {
 
 if (closeAuthBtn) {
     closeAuthBtn.addEventListener('click', () => {
+        clearAuthError();
         authModal.classList.add('hidden');
     });
 }
@@ -1134,6 +1164,7 @@ if (closePaywallBtn) {
 // Close overlays if backing out
 window.addEventListener('click', (e) => {
     if (e.target === authModal) {
+        clearAuthError();
         authModal.classList.add('hidden');
     }
     if (e.target === paywallModal) {
@@ -1149,6 +1180,7 @@ const signupForm = document.getElementById('signup-form');
 
 if (tabLoginBtn && tabSignupBtn) {
     tabLoginBtn.addEventListener('click', () => {
+        clearAuthError();
         tabLoginBtn.classList.add('active');
         tabSignupBtn.classList.remove('active');
         loginForm.classList.remove('hidden');
@@ -1156,6 +1188,7 @@ if (tabLoginBtn && tabSignupBtn) {
     });
     
     tabSignupBtn.addEventListener('click', () => {
+        clearAuthError();
         tabSignupBtn.classList.add('active');
         tabLoginBtn.classList.remove('active');
         signupForm.classList.remove('hidden');
@@ -1170,13 +1203,35 @@ const signupFormElement = document.getElementById('signup-form');
 if (loginFormElement) {
     loginFormElement.addEventListener('submit', (e) => {
         e.preventDefault();
-        const email = document.getElementById('login-email').value;
+        clearAuthError();
+        const email = document.getElementById('login-email').value.trim().toLowerCase();
+        const password = document.getElementById('login-password').value;
+        
+        const usersList = JSON.parse(localStorage.getItem('hidden_eye_registered_users') || '[]');
+        const matchedUser = usersList.find(u => u.email === email);
+        
+        if (!matchedUser) {
+            displayAuthError("🔒 This email is not registered. Please register first and then log in!");
+            logEvent(`Login failed: ${email} is not registered.`, "warning");
+            return;
+        }
+        
+        if (matchedUser.password !== password) {
+            displayAuthError("❌ Incorrect password. Please check your credentials.");
+            logEvent(`Login failed: Incorrect password for ${email}.`, "warning");
+            return;
+        }
         
         currentUser = {
-            email: email,
-            name: email.split('@')[0],
-            premium: localStorage.getItem('hidden_eye_premium') === 'true'
+            email: matchedUser.email,
+            name: matchedUser.name,
+            premium: localStorage.getItem('hidden_eye_premium') === 'true' || matchedUser.premium === true
         };
+        
+        // Sync premium state
+        if (currentUser.premium) {
+            localStorage.setItem('hidden_eye_premium', 'true');
+        }
         
         localStorage.setItem('hidden_eye_user', JSON.stringify(currentUser));
         isPremium = currentUser.premium;
@@ -1190,15 +1245,28 @@ if (loginFormElement) {
 if (signupFormElement) {
     signupFormElement.addEventListener('submit', (e) => {
         e.preventDefault();
-        const email = document.getElementById('signup-email').value;
-        const name = document.getElementById('signup-name').value;
+        clearAuthError();
+        const email = document.getElementById('signup-email').value.trim().toLowerCase();
+        const name = document.getElementById('signup-name').value.trim();
+        const password = document.getElementById('signup-password').value;
         
-        currentUser = {
+        const usersList = JSON.parse(localStorage.getItem('hidden_eye_registered_users') || '[]');
+        if (usersList.some(u => u.email === email)) {
+            displayAuthError("⚠️ Email already registered. Please log in instead.");
+            return;
+        }
+        
+        const newUser = {
             email: email,
             name: name,
+            password: password,
             premium: false
         };
         
+        usersList.push(newUser);
+        localStorage.setItem('hidden_eye_registered_users', JSON.stringify(usersList));
+        
+        currentUser = newUser;
         localStorage.setItem('hidden_eye_user', JSON.stringify(currentUser));
         isPremium = false;
         localStorage.setItem('hidden_eye_premium', 'false');

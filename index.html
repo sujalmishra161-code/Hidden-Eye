@@ -353,6 +353,29 @@
             </div>
         </section>
 
+        <!-- Credits Section -->
+        <section class="credits-section tab-content tab-gallery" style="margin-top: 4rem;">
+            <h2>Credits & Technologies</h2>
+            <div class="details-grid" style="margin-top: 1.5rem;">
+                <div class="info-card">
+                    <h3>OPENCV.JS (WebAssembly)</h3>
+                    <p>Real-time, client-side computer vision operations compiled to WebAssembly for scanning and analyzing specular reflections locally in the browser sandbox.</p>
+                </div>
+                <div class="info-card">
+                    <h3>WEB AUDIO API</h3>
+                    <p>Procedural sound synthesis to generate detuned dual-oscillator warning alarms directly inside your browser tab without loading massive audio file assets.</p>
+                </div>
+                <div class="info-card">
+                    <h3>CAPACITOR JS</h3>
+                    <p>Cross-platform runtime wrapper enabling native mobile deployment and device hardware interface bindings on Android and iOS devices.</p>
+                </div>
+                <div class="info-card">
+                    <h3>GOOGLE FONTS</h3>
+                    <p>Modern typography featuring <em>Syne</em> for geometric headers, <em>JetBrains Mono</em> for technical telemetry, and <em>Plus Jakarta Sans</em> for UI body copy.</p>
+                </div>
+            </div>
+        </section>
+
         <footer>
             <p>&copy; 2026 Hidden Eye. Powered by WebAssembly OpenCV.js.</p>
         </footer>
@@ -400,6 +423,22 @@
                 <button class="modal-close" id="close-auth-btn">&times;</button>
             </div>
             <div class="modal-body">
+                <!-- Local Secure Database Info Banner -->
+                <div class="auth-info-banner" style="background: rgba(168, 85, 247, 0.08); border: 1px dashed rgba(168, 85, 247, 0.4); border-radius: 4px; padding: 0.75rem; margin-bottom: 1.25rem; font-size: 0.72rem; line-height: 1.4; color: var(--text-secondary);">
+                    <div style="display: flex; gap: 8px; align-items: flex-start;">
+                        <span style="font-size: 1rem;">ℹ️</span>
+                        <div>
+                            <strong style="color: var(--color-cyan); display: block; margin-bottom: 2px;">LOCAL SECURE DATABASE</strong>
+                            User profiles and subscriptions are simulated and stored locally on your device's sandbox. Any email/password combination will authorize access.
+                            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--mono-font);">
+                                <span style="color: #ff9900;">Quick Test Account:</span><br>
+                                <span style="color: var(--text-secondary);">Email:</span> <code style="background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 2px; color: #fff;">test@hiddeneye.com</code><br>
+                                <span style="color: var(--text-secondary);">Password:</span> <code style="background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 2px; color: #fff;">testpass</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="auth-tabs">
                     <button class="auth-tab-btn active" id="tab-login-btn">LOGIN</button>
                     <button class="auth-tab-btn" id="tab-signup-btn">REGISTER</button>
